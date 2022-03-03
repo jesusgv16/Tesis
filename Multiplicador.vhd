@@ -15,9 +15,10 @@ entity serial_multiplier_113 is
 	 	ax : in  std_logic_vector(NUM_BITS-1 downto 0); 
 		bx : in  std_logic_vector(NUM_BITS-1 downto 0);	 
 		cx : out std_logic_vector(NUM_BITS-1 downto 0);		-- cx = ax*bx mod Fx
-		reset : in std_logic;
+		RST : in std_logic;
 		clk	  : in std_logic;
-		done  : out std_logic
+		done  : out std_logic;
+		done_ecc  : out std_logic
 	);	
 end serial_multiplier_113;
 -----------------------------------------------------------
@@ -59,7 +60,7 @@ cx <= cx_int;
 FSM_MUL: process (CLK)
 	Begin						
 		if CLK'event and CLK = '1' then
-			if Reset = '1' then
+			if RST = '1' then
 				counter <= "00000000"; 						-- m-1 value, in this case, it is 112, be sure to set the correct value
 			 	cx_int <= (others => '0');
 				Done_int <= '0';				
@@ -182,7 +183,8 @@ FSM_MUL: process (CLK)
 				end if;
 				
 				if counter = "01110000" then
-				  	done_int <= '1';	
+				  	done_int <= '1';
+				  	done_ecc <= '1';		
 				end if;	
 				
 			end if;
@@ -192,7 +194,7 @@ end process;
 SHIFT_REGISTER: process (CLK)
 	Begin						
 		if CLK'event and CLK = '1' then
-			if Reset = '1' then
+			if RST = '1' then
 				Bx_shift  <= Bx;	
 			else 	
 				Bx_shift <= Bx_shift(NUM_BITS-2 downto 0) & '0'; -- carga paralela
