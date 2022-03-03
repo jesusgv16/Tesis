@@ -1,64 +1,42 @@
-----------------------------------------------------------------------------------
--- Company:        University of Genova
--- Engineer:       Alessio Leoncini, Alberto Oliveri
--- 
--- Create Date:    14:28:47 10/06/2011 
--- Design Name: 
--- Module Name:    CaosAlAl - Behavioral 
--- Project Name: 
--- Target Devices: 
--- Tool versions: 
--- Description:    Random Bit Generator based on a chaotic map
---
--- Dependencies: 
---
--- Revision: 
--- Revision 0.01 - File Created
--- Additional Comments: 
---
-----------------------------------------------------------------------------------
 library IEEE;
-use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.NUMERIC_STD.ALL;
 
-entity CaosAlAl is
-    generic (nbit : integer := 113);
-     Port ( clk : in  STD_LOGIC;
-           RST : in  STD_LOGIC;
-           out0 : out  STD_LOGIC;
-           salida_caos: out std_logic_vector (112 downto 0)
-           
-           );
-end CaosAlAl;
-
-architecture Behavioral of CaosAlAl is
-    signal reg : signed(nbit-1 downto 0);
-    -- Supposing 2 integer bits and two's complement, one and minus one values
-    constant zero : signed(nbit-1 downto 0) := "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
-    constant one : signed(nbit-1 downto 0) := "01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
-    constant minusone : signed(nbit-1 downto 0) := "11000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
-    constant x0  : signed(nbit-1 downto 0) := "00100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+use ieee.std_logic_1164.all;
+use ieee.std_logic_unsigned.all;
+----------------------------------------------------------------
+entity small2big is
+        port (
+                entrada_s2b : in std_logic_vector ( 31 downto 0);
+                clk   : in std_logic;
+                salida_s2b  : out std_logic_vector (112 downto 0);
+                iniciar_s2b : in std_logic;
+                full_s2b : out std_logic
+              );
+end small2big;
+----------------------------------------------------------------
+architecture Behavioral of small2big is
+    signal ain,b,c: std_logic_vector(31 downto 0);
+    signal t       : std_logic_vector (1 downto 0):="00";
 begin
-    
-    out0 <= reg(nbit-1);
 
-main:process(clk,RST)
+process(clk)
 begin
-    if RST = '0' then
-        if (clk'event and clk ='1') then
-            if (reg < zero) then
-                reg <= (( reg(nbit-2 downto 0) & '0' ) - ( "111" & reg(nbit-1 downto 3) )) + one;
-                salida_caos <= std_logic_vector(reg);
-            else
-                reg <= (( reg(nbit-2 downto 0)&'0' ) - ( "000" & reg(nbit-1 downto 3) )) + minusone;
-                salida_caos <= std_logic_vector(reg);
-            end if;
-        end if;
-    else
-        -- init
-        reg <= x0;
-   
+
+if ( iniciar_s2b = '1' and rising_edge(clk) ) then
+    if (t="00") then
+        ain <= entrada_s2b (31 downto 0);
+        t<="01";
+    elsif (t="01") then
+        b <= entrada_s2b (31 downto 0);
+        t<="10";
+    elsif (t="10") then
+        c <= entrada_s2b (31 downto 0);
+        full_s2b <= '1';
     end if;
+end if;
+
 end process;
+
+salida_s2b <= ain & b & c & "00000000000000000"; --concatenar las entradas
+
 
 end Behavioral;
