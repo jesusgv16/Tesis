@@ -16,9 +16,8 @@ end toplevel;
 architecture behavioral of toplevel is
  -----------------------  signals de cada componente---------------------
      ----------CAOS------------
-     signal clock :   STD_LOGIC;
-     signal reset :  STD_LOGIC;
      signal out0 : STD_LOGIC;
+     signal salida_caos : std_logic_vector (112  downto 0);
      -------------big2small-------
      signal entrada_b2s : std_logic_vector ( 112 downto 0);
      signal iniciar_b2s :  std_logic;
@@ -26,6 +25,7 @@ architecture behavioral of toplevel is
      -------------small2big-------
      signal entrada_s2b :  std_logic_vector ( 31 downto 0);
      signal salida_s2b  :  std_logic_vector (112 downto 0);
+      signal big2sha  :  std_logic_vector (112 downto 0);
      signal iniciar_s2b :  std_logic;
     -------------------multiplier-------------
  	 signal ax : std_logic_vector(112 downto 0); 
@@ -43,24 +43,27 @@ architecture behavioral of toplevel is
  ---------------------------------------------------------------------------
  ------------componentes-----------------------
  component CaosAlAl
-     Port ( clock : in  STD_LOGIC;
-           reset : in  STD_LOGIC;
-           out0 : out  STD_LOGIC
+     Port ( clk : in  STD_LOGIC;
+           RST : in  STD_LOGIC;
+           out0 : out  STD_LOGIC;
+           salida_caos: out std_logic_vector (112 downto 0)
            );
  end component CaosAlAl;
  ---------------------
 component big2small
      Port(entrada_b2s : in std_logic_vector ( 112 downto 0);
-    	  clock   : in std_logic;
+    	  clk   : in std_logic;
     	  iniciar_b2s : in std_logic;
-    	  salida_b2s  : out std_logic_vector (31 downto 0)
+    	  salida_b2s  : out std_logic_vector (31 downto 0);
+    	  done_b2s : out std_logic
+    	  
     	  );           
 end component big2small;
 ----------------------
 component small2big
         port (
                 entrada_s2b : in std_logic_vector ( 31 downto 0);
-                clock   : in std_logic;
+                clk   : in std_logic;
                 salida_s2b  : out std_logic_vector (112 downto 0);
                 iniciar_s2b : in std_logic
               );
@@ -72,7 +75,7 @@ component serial_multiplier_113
 	 	ax : in  std_logic_vector(112 downto 0); 
 		bx : in  std_logic_vector(112 downto 0);	 
 		cx : out std_logic_vector(112 downto 0);		-- cx = ax*bx mod Fx
-		reset : in std_logic;
+		RST : in std_logic;
 		clk	  : in std_logic;
 		done  : out std_logic
 	);	
@@ -81,9 +84,9 @@ end component serial_multiplier_113;
 component fsm
     port (        
         clk : in  std_logic;
-        reset : in std_logic;
+        RST : in std_logic;
         x, full_s2b, done_ecc, done_b2s, done_hash : in std_logic;
-        z : out std_logic
+        z, iniciar_s2b,iniciar_b2s : out std_logic
     );
 end component fsm;           
 ---------------------sha256------------------------
@@ -101,57 +104,62 @@ end component SHA256_iterativo1R;
 
  ---------------- end components--------------------
  
- 
+ --lado izq pines y lado derecho los cables, lo izq no se modfica
+ ---lado derecho si se bautiza, es el nombre que le doy al cable
 begin
  
-  BIG2SMALL_1: big2small
+  BIG2SMALL_1: big2small  
   port map(
-        entrada_b2s => entrada_b2s,
-        clock  => clock, 
-        salida_b2s => salida_b2s,  
-        iniciar_b2s => iniciar_b2s
+        entrada_b2s => cx,
+        clk  => clk, 
+        salida_b2s => PALABRA,  
+        iniciar_b2s => iniciar_b2s,
+        done_b2s => RESUMIR
            );
    ECC: serial_multiplier_113 
 	port map (
-	 	ax => ax,
-		bx => bx,
+	 	ax => salida_s2b,
+		bx => salida_caos,
 		cx => cx,
-		reset => reset,
-		clk => clock,
+		RST => RST,
+		clk => clk,
 		done => done
 	);	
 SMALL2BIG_1: small2big
   port map(
-        entrada_s2b => entrada_s2b,
-        clock  => clock, 
+        entrada_s2b => A,
+        clk  => clk, 
         salida_s2b => salida_s2b,  
         iniciar_s2b => iniciar_s2b
            );	
 CHAOS: CaosAlAl	
-	port map(clock  => clock, 
-           reset => reset,
-           out0 => out0
+	port map(clk  => clk, 
+           RST => RST,
+           out0 => out0,
+           salida_caos => salida_caos
            );
 SHA2: sha256_iterativo1R	
 	port map( 	
 	 PALABRA => PALABRA,
  	 RESUMIR => RESUMIR, 
- 	 CLK => clock,
-	 RST => reset,
+ 	 CLK => clk,
+	 RST => RST,
 	 LISTO => LISTO,
 	 RESUMEN => RESUMEN
            );	
            
 FSMachine: fsm
      port map (
-        clk => clock,
-        reset => reset,
+        clk => clk,
+        RST => RST,
         x => x,
         full_s2b => full_s2b,
         done_ecc => done_ecc,
         done_b2s => done_b2s,
         done_hash => done_hash,
-        z =>z
+        z =>z,
+        iniciar_s2b => iniciar_s2b,
+        iniciar_b2s => iniciar_b2s
          );
 end architecture;
 
