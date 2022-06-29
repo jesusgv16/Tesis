@@ -1,0 +1,80 @@
+library IEEE;
+use ieee.std_logic_1164.all;
+use ieee.std_logic_unsigned.all;
+----------------------------------------------------------------
+entity Pad_SHA is
+ Port (
+        entrada_pad : in std_logic_vector (112 downto 0);
+        clk         : in std_logic;
+        rst         : in std_logic;
+        iniciar_pad : in std_logic;
+        done_pad    : out std_logic;
+        salida_pad  : out std_logic_vector (31 downto 0)
+      );
+end Pad_SHA;
+----------------------------------------------------------------
+architecture Behavioral of Pad_SHA is
+    signal tramas  : std_logic_vector(511 downto 0);
+    signal t       : std_logic_vector (4 downto 0):="00000";
+begin
+
+process(clk)
+begin
+if (iniciar_pad = '1' and rising_edge(clk) ) then
+   tramas <= entrada_pad & "100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001110001";
+   
+      if (t="00000") then
+            salida_pad (31 downto 0) <= tramas (511 downto 480);
+             t<="00001";
+      elsif (t="00001") then
+            salida_pad (31 downto 0) <= tramas (479 downto 448);
+            t<="00010";
+      elsif (t="00010") then
+            salida_pad (31 downto 0) <= tramas (447 downto 416);
+            t<="00011";
+      elsif (t="00011") then 
+            salida_pad (31 downto 0) <= tramas (415 downto 384);
+            t<="00100";
+      elsif (t="00100") then 
+            salida_pad (31 downto 0) <= tramas (383 downto 352);
+            t<="00101";
+      elsif (t="00101") then
+            salida_pad (31 downto 0) <= tramas (351 downto 320);
+            t<="00110";
+      elsif (t="00110") then 
+            salida_pad (31 downto 0) <= tramas (319 downto 288);
+            t<="00111";
+      elsif (t="00111") then 
+            salida_pad (31 downto 0) <= tramas (287 downto 256);
+            t<="01000";
+      elsif (t="01000") then
+            salida_pad (31 downto 0) <= tramas (255 downto 224);
+            t<="01001";
+      elsif (t="01001") then  
+            salida_pad (31 downto 0) <= tramas (223 downto 192);
+            t<="01010";
+      elsif (t="01010") then 
+            salida_pad (31 downto 0) <= tramas (191 downto 160);
+            t<="01011";
+      elsif (t="01011") then 
+            salida_pad (31 downto 0) <= tramas (159 downto 128);
+            t<="01100";
+      elsif (t="01100") then    
+            salida_pad (31 downto 0) <= tramas (127 downto 96);
+            t<="01101";
+      elsif (t="01101") then 
+            salida_pad (31 downto 0) <= tramas (95 downto 64);
+            t<="01110";
+      elsif (t="01110") then 
+            salida_pad (31 downto 0) <= tramas (63 downto 32);
+            t<="01111";
+      elsif (t="01111") then 
+            salida_pad (31 downto 0) <= tramas (31 downto 0);
+            t<="11111";
+            done_pad <= '1';
+       end if;
+end if;
+
+end process;
+
+end Behavioral;
