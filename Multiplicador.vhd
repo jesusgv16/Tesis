@@ -16,8 +16,8 @@ entity serial_multiplier_113 is
 		bx : in  std_logic_vector(NUM_BITS-1 downto 0);	 
 		cx : out std_logic_vector(NUM_BITS-1 downto 0);		-- cx = ax*bx mod Fx
 		RST : in std_logic;
+		start_ecc : in std_logic;
 		clk	  : in std_logic;
-		done  : out std_logic;
 		done_ecc  : out std_logic
 	);	
 end serial_multiplier_113;
@@ -54,18 +54,18 @@ bx_int <= Bx_shift;				-- Shift Bx to left one position
 -- the multiplication, a counter is used to keep this count
 ------------------------------------------------------------
 
-done <= done_int;
+done_ecc <= done_int;
 cx <= cx_int;
 
 FSM_MUL: process (CLK)
 	Begin						
 		if CLK'event and CLK = '1' then
-			if RST = '1' then
+			if RST = '1'  then
 				counter <= "00000000"; 						-- m-1 value, in this case, it is 112, be sure to set the correct value
 			 	cx_int <= (others => '0');
 				Done_int <= '0';				
 			else 	  
-				if done_int = '0' then
+				if done_int = '0' and start_ecc = '1' then 
 					counter <= counter + 1;
 					Cx_int(0) <= ( Ax(0) and Bx_int(NUM_BITS-1) ) xor Cx_int(NUM_BITS-1);
 					Cx_int(1) <= ( Ax(1) and Bx_int(NUM_BITS-1) ) xor Cx_int(0);
@@ -183,8 +183,7 @@ FSM_MUL: process (CLK)
 				end if;
 				
 				if counter = "01110000" then
-				  	done_int <= '1';
-				  	done_ecc <= '1';		
+				  	done_int <= '1';	
 				end if;	
 				
 			end if;
